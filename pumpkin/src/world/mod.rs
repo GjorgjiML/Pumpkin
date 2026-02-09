@@ -776,17 +776,27 @@ impl World {
         let mut spawn_state =
             SpawnState::new(spawning_chunks_map.len() as i32, &self.entities, self).await; // TODO store it
 
-        // TODO gamerule this.spawnEnemies || this.spawnFriendlies
-        let spawn_passives = self.level_time.lock().await.time_of_day % 400 == 0;
+        // Day: friendly mobs only, Night: enemy mobs only
+        let level_time = self.level_time.lock().await;
+        let is_night = level_time.is_night();
+        let time_of_day = level_time.time_of_day;
+        drop(level_time);
+        let spawn_friendlies = !is_night;
+        let spawn_enemies = is_night;
+        // During day, always allow persistent friendly mobs (creatures) to spawn;
+        // during night, use the normal 400-tick interval for passive spawns
+        let spawn_passives = if spawn_friendlies {
+            true
+        } else {
+            time_of_day % 400 == 0
+        };
         let spawn_list: Vec<&'static MobCategory> =
             natural_spawner::get_filtered_spawning_categories(
                 &spawn_state,
-                true,
-                true,
+                spawn_friendlies,
+                spawn_enemies,
                 spawn_passives,
             );
-
-        // log::debug!("spawning list size {}", spawn_list.len());
         let mut spawning_chunks: Vec<(Vector2<i32>, Arc<ChunkData>)> =
             spawning_chunks_map.into_iter().collect();
         spawning_chunks.shuffle(&mut rng());
