@@ -2307,6 +2307,24 @@ impl World {
         None
     }
 
+    // Gets all entities at a Box
+    pub fn get_all_at_box(&self, aabb: &BoundingBox) -> Vec<Arc<dyn EntityBase>> {
+        let entities_guard = self.entities.load();
+        let players_guard = self.players.load();
+
+        entities_guard
+            .iter()
+            .map(|e| e.clone() as Arc<dyn EntityBase>)
+            .chain(
+                players_guard
+                    .iter()
+                    .map(|p| p.clone() as Arc<dyn EntityBase>),
+            )
+            .filter(|entity| entity.get_entity().bounding_box.load().intersects(aabb))
+            .collect()
+    }
+
+    // Gets all non Player entities at a Box
     pub fn get_entities_at_box(&self, aabb: &BoundingBox) -> Vec<Arc<dyn EntityBase>> {
         self.entities
             .load()
@@ -2315,6 +2333,8 @@ impl World {
             .cloned()
             .collect()
     }
+
+    // Gets all Player entities at a Box
     pub fn get_players_at_box(&self, aabb: &BoundingBox) -> Vec<Arc<Player>> {
         let players_guard = self.players.load();
         players_guard
@@ -3345,18 +3365,18 @@ impl World {
     }
 
     async fn ray_outline_check(
-        self: &Arc<Self>,
+        &self,
         block_pos: &BlockPos,
         from: Vector3<f64>,
         to: Vector3<f64>,
     ) -> (bool, Option<BlockDirection>) {
         let state = self.get_block_state(block_pos).await;
 
-        let bounding_boxes = state.get_block_outline_shapes();
-
         if state.outline_shapes.is_empty() {
             return (true, None);
         }
+
+        let bounding_boxes = state.get_block_outline_shapes();
 
         for shape in bounding_boxes {
             let world_min = shape.min.add(&block_pos.0.to_f64());
