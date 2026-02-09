@@ -537,7 +537,6 @@ pub async fn is_valid_spawn_position_for_type(
     entity_type: &'static EntityType,
     distance: f64,
 ) -> bool {
-    // TODO !SpawnPlacements.checkSpawnRules(entityType, level, EntitySpawnReason.NATURAL, pos, level.random)
     if category == &MobCategory::MISC {
         return false;
     }
@@ -551,6 +550,12 @@ pub async fn is_valid_spawn_position_for_type(
     if !entity_type.summonable {
         return false;
     }
+
+    // Light level checks for spawn rules
+    if !check_spawn_light_level(world, block_pos, category).await {
+        return false;
+    }
+
     if !is_spawn_position_ok(world, block_pos, entity_type).await {
         return false;
     }
@@ -567,6 +572,68 @@ pub async fn is_valid_spawn_position_for_type(
             },
         ))
         .await
+}
+
+/// Check if the light level at the given position allows spawning for the given mob category.
+///
+/// For monsters (hostile mobs):
+/// - Block light must be <= monster_spawn_block_light_limit (0 in overworld, 15 in nether)
+/// - Sky light (used as proxy for overall light) must allow spawning
+///
+/// For passive/friendly mobs:
+/// - Sky light should be >= 9 (they typically only spawn in bright areas)
+async fn check_spawn_light_level(
+    world: &Arc<World>,
+    block_pos: &BlockPos,
+    category: &'static MobCategory,
+) -> bool {
+    if category == &MobCategory::MONSTER {
+        // Monster spawning: check block light limit
+        // In overworld: block_light must be 0, sky_light can be anything (monsters spawn at night)
+        // In nether: block_light limit is 15 (any block light), but monster_spawn_light_level is 7
+        let block_light = world.get_block_light_level(block_pos).await.unwrap_or(0);
+
+        let dimension = &world.dimension;
+        // Use dimension-specific rules
+        // Overworld: monster_spawn_block_light_limit = 0 (only spawn when block light is 0)
+        // Nether: monster_spawn_block_light_limit = 15 (can spawn at any block light)
+        let block_light_limit = match dimension.minecraft_name {
+            "minecraft:the_nether" => 15u8,
+            "minecraft:the_end" => 0u8,
+            _ => 0u8, // Overworld and caves
+        };
+
+        if block_light > block_light_limit {
+            return false;
+        }
+
+        // Also check sky light for overworld (monsters don't spawn during day in lit areas)
+        let sky_light = world.get_sky_light_level(block_pos).await.unwrap_or(0);
+        let combined_light = block_light.max(sky_light);
+
+        // Monster spawn light level threshold
+        // Overworld: random 0-7 (we use 7 as max - monsters spawn in dark areas)
+        // Nether: 7
+        // End: 15 (monsters always spawn)
+        let max_spawn_light = match dimension.minecraft_name {
+            "minecraft:the_nether" => 7u8,
+            "minecraft:the_end" => 15u8,
+            _ => 7u8, // Overworld
+        };
+
+        if combined_light > max_spawn_light {
+            return false;
+        }
+
+        true
+    } else if category == &MobCategory::CREATURE {
+        // Passive mob spawning: need decent light (sky light >= 9)
+        let sky_light = world.get_sky_light_level(block_pos).await.unwrap_or(0);
+        sky_light >= 9
+    } else {
+        // Other categories (water creatures, ambient, etc.) - no light restriction
+        true
+    }
 }
 
 pub async fn is_spawn_position_ok(

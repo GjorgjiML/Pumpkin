@@ -2801,6 +2801,45 @@ impl World {
         self.level.is_fluid_tick_scheduled(block_pos, fluid).await
     }
 
+    /// Get the block light level at the given position.
+    pub async fn get_block_light_level(&self, position: &BlockPos) -> Option<u8> {
+        let (chunk_coordinate, relative) = position.chunk_and_chunk_relative_position();
+        let chunk = self.level.get_chunk(chunk_coordinate).await;
+        let section_index = (relative.y - chunk.section.min_y) as usize / 16;
+        let light = chunk.light_engine.lock().unwrap();
+        if section_index >= light.block_light.len() {
+            return None;
+        }
+        Some(light.block_light[section_index].get(
+            relative.x as usize,
+            (relative.y - chunk.section.min_y) as usize % 16,
+            relative.z as usize,
+        ))
+    }
+
+    /// Get the sky light level at the given position.
+    pub async fn get_sky_light_level(&self, position: &BlockPos) -> Option<u8> {
+        let (chunk_coordinate, relative) = position.chunk_and_chunk_relative_position();
+        let chunk = self.level.get_chunk(chunk_coordinate).await;
+        let section_index = (relative.y - chunk.section.min_y) as usize / 16;
+        let light = chunk.light_engine.lock().unwrap();
+        if section_index >= light.sky_light.len() {
+            return None;
+        }
+        Some(light.sky_light[section_index].get(
+            relative.x as usize,
+            (relative.y - chunk.section.min_y) as usize % 16,
+            relative.z as usize,
+        ))
+    }
+
+    /// Get the combined light level (max of sky light and block light) at a position.
+    pub async fn get_light_level(&self, position: &BlockPos) -> u8 {
+        let block_light = self.get_block_light_level(position).await.unwrap_or(0);
+        let sky_light = self.get_sky_light_level(position).await.unwrap_or(0);
+        block_light.max(sky_light)
+    }
+
     // Return new state
     pub async fn break_block(
         self: &Arc<Self>,
