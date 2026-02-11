@@ -1,0 +1,9 @@
+[package]
+name = "albion-types"
+version = "0.1.0"
+edition = "2024"
+description = "Shared types for AlbionMC plugins"
+
+[dependencies]
+uuid = { version = "1.20", features = ["serde", "v4"] }
+serde = { version = "1.0", features = ["derive"] }

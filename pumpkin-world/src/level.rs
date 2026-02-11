@@ -80,6 +80,9 @@ pub struct Level {
 
     pub world_gen: Arc<VanillaGenerator>,
 
+    /// Use superflat generation for overworld (bedrock, 2× dirt, grass block).
+    pub flat_world: bool,
+
     /// Handles runtime lighting updates
     pub light_engine: DynamicLightEngine,
 
@@ -180,6 +183,7 @@ impl Level {
             seed,
             block_registry,
             world_gen,
+            flat_world: level_config.flat_world,
             level_folder,
             lighting_config: level_config.lighting,
             light_engine: DynamicLightEngine::new(),
@@ -351,6 +355,14 @@ impl Level {
         // TODO: I think the chunk_saver should be at the server level
         self.entity_saver.clear_watched_chunks().await;
         self.write_entity_chunks(chunks_to_write).await;
+    }
+
+    /// Flushes all pending chunk and entity data to disk without shutting down the level.
+    /// Use this for manual/force save (e.g. from a plugin command).
+    pub async fn flush_to_disk(&self) {
+        log::info!("Flushing data to disk for {}...", self.level_folder.root_folder.display());
+        self.chunk_saver.block_and_await_ongoing_tasks().await;
+        self.entity_saver.block_and_await_ongoing_tasks().await;
     }
 
     pub fn loaded_chunk_count(&self) -> usize {

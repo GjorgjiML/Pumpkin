@@ -252,6 +252,7 @@ pub fn generation_work(
                 &level.world_gen.terrain_cache,
                 &level.world_gen.base_router,
                 level.world_gen.dimension,
+                level.flat_world,
             );
             cache // Return cache on success
         }));

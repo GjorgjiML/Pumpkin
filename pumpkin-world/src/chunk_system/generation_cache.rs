@@ -318,6 +318,7 @@ impl Cache {
         terrain_cache: &TerrainCache,
         noise_router: &ProtoNoiseRouters,
         dimension: Dimension,
+        flat_world: bool,
     ) {
         let mid = ((self.size * self.size) >> 1) as usize;
         match stage {
@@ -329,17 +330,29 @@ impl Cache {
             StagedChunkEnum::Biomes => self.chunks[mid]
                 .get_proto_chunk_mut()
                 .step_to_biomes(dimension, noise_router),
-            StagedChunkEnum::Noise => self.chunks[mid].get_proto_chunk_mut().step_to_noise(
-                settings,
-                random_config,
-                noise_router,
-            ),
-            StagedChunkEnum::Surface => self.chunks[mid].get_proto_chunk_mut().step_to_surface(
-                settings,
-                random_config,
-                terrain_cache,
-                noise_router,
-            ),
+            StagedChunkEnum::Noise => {
+                if flat_world && dimension == Dimension::OVERWORLD {
+                    self.chunks[mid].get_proto_chunk_mut().step_to_flat();
+                } else {
+                    self.chunks[mid].get_proto_chunk_mut().step_to_noise(
+                        settings,
+                        random_config,
+                        noise_router,
+                    );
+                }
+            }
+            StagedChunkEnum::Surface => {
+                if flat_world && dimension == Dimension::OVERWORLD {
+                    // Chunk already at Surface from step_to_flat
+                } else {
+                    self.chunks[mid].get_proto_chunk_mut().step_to_surface(
+                        settings,
+                        random_config,
+                        terrain_cache,
+                        noise_router,
+                    );
+                }
+            }
             StagedChunkEnum::Features => {
                 ProtoChunk::generate_features_and_structure(self, block_registry, random_config);
             }

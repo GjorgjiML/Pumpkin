@@ -462,6 +462,26 @@ impl Server {
         log::info!("Completed worlds");
     }
 
+    /// Force-saves all world and player data to disk without shutting down the server.
+    /// Saves: all players, all worlds (entities, portal POI, chunks), and level.dat.
+    pub async fn force_save_all(&self) {
+        log::info!("Starting force save.");
+        if let Err(e) = self.player_data_storage.save_all_players(self).await {
+            log::error!("Error saving player data during force save: {e}");
+        }
+        for world in self.worlds.load().iter() {
+            world.force_save().await;
+        }
+        let level_data = self.level_info.load();
+        if let Err(err) = self
+            .world_info_writer
+            .write_world_info(&level_data, &self.basic_config.get_world_path())
+        {
+            log::error!("Failed to save level.dat during force save: {err}");
+        }
+        log::info!("Force save completed.");
+    }
+
     /// Broadcasts a packet to all players in all worlds.
     ///
     /// This function sends the specified packet to every connected player in every world managed by the server.

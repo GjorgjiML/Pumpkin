@@ -10,6 +10,11 @@ members = [
     "pumpkin-world",
     "pumpkin/",
     "pumpkin-data",
+    "plugin-src/albinomccore/albion-db",
+    "plugin-src/albinomccore/albion-types",
+    "plugin-src/albinomccore/albion-core",
+    "plugin-src/wordguardpmc",
+    "plugin-src/force_save",
 ]
 exclude = ["pumpkin-codegen", "pumpkin-worldedit"]
 

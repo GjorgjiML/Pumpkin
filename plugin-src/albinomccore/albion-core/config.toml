@@ -1,0 +1,3 @@
+# AlbionMC albion_core configuration
+[database]
+url = "postgres://albion:albion@127.0.0.1:5432/albionmc"

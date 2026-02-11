@@ -93,6 +93,13 @@ impl JavaClient {
                             "Client {} failed to downloaded the resource pack. Is it available on the internet?",
                             self.id
                         );
+                        if resource_config.force {
+                            self.kick(TextComponent::text(
+                                "This server requires a custom resource pack. Download failed. Please try again or check your connection.",
+                            ))
+                            .await;
+                            return;
+                        }
                     }
                     ResourcePackResponseResult::Downloaded => {
                         log::trace!("Client {} already has the resource pack", self.id);
@@ -105,18 +112,46 @@ impl JavaClient {
                     }
                     ResourcePackResponseResult::Declined => {
                         log::trace!("Client {} declined the resource pack", self.id);
+                        if resource_config.force {
+                            self.kick(TextComponent::text(
+                                "This server requires a custom resource pack. You must accept it to play.",
+                            ))
+                            .await;
+                            return;
+                        }
                     }
                     ResourcePackResponseResult::InvalidUrl => {
                         log::warn!(
                             "Client {} reported that the resource pack URL is invalid!",
                             self.id
                         );
+                        if resource_config.force {
+                            self.kick(TextComponent::text(
+                                "This server requires a custom resource pack. The pack URL is invalid. Please contact the server.",
+                            ))
+                            .await;
+                            return;
+                        }
                     }
                     ResourcePackResponseResult::ReloadFailed => {
                         log::trace!("Client {} failed to reload the resource pack", self.id);
+                        if resource_config.force {
+                            self.kick(TextComponent::text(
+                                "This server requires a custom resource pack. Reload failed. Try reconnecting.",
+                            ))
+                            .await;
+                            return;
+                        }
                     }
                     ResourcePackResponseResult::Discarded => {
                         log::trace!("Client {} discarded the resource pack", self.id);
+                        if resource_config.force {
+                            self.kick(TextComponent::text(
+                                "This server requires a custom resource pack. You must keep it enabled to play.",
+                            ))
+                            .await;
+                            return;
+                        }
                     }
                     ResourcePackResponseResult::Unknown(result) => {
                         log::warn!(
@@ -124,6 +159,13 @@ impl JavaClient {
                             self.id,
                             result
                         );
+                        if resource_config.force {
+                            self.kick(TextComponent::text(
+                                "This server requires a custom resource pack. Unexpected response. Please try again.",
+                            ))
+                            .await;
+                            return;
+                        }
                     }
                 }
             } else {
@@ -131,6 +173,13 @@ impl JavaClient {
                     "Client {} returned a response for a resource pack we did not set!",
                     self.id
                 );
+                if resource_config.force {
+                    self.kick(TextComponent::text(
+                        "This server requires the correct resource pack. Please reconnect to receive it.",
+                    ))
+                    .await;
+                    return;
+                }
             }
         } else {
             log::warn!(

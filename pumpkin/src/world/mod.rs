@@ -248,6 +248,20 @@ impl World {
             .unwrap_or_default()
     }
 
+    /// Force-saves world data (entities, portal POI, chunks) to disk without shutting down.
+    pub async fn force_save(&self) {
+        for entity in self.entities.load().iter() {
+            self.save_entity(entity).await;
+        }
+
+        let save_result = self.portal_poi.lock().await.save_all();
+        if let Err(e) = save_result {
+            log::error!("Failed to save portal POI: {e}");
+        }
+
+        self.level.flush_to_disk().await;
+    }
+
     pub async fn shutdown(&self) {
         for entity in self.entities.load().iter() {
             self.save_entity(entity).await;

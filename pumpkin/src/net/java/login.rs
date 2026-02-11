@@ -363,16 +363,22 @@ impl JavaClient {
         let resource_config = &server.advanced_config.resource_pack;
         if resource_config.enabled {
             let uuid = Uuid::new_v3(&uuid::Uuid::NAMESPACE_DNS, resource_config.url.as_bytes());
+            let prompt = if !resource_config.prompt_message.is_empty() {
+                Some(TextComponent::text(resource_config.prompt_message.clone()))
+            } else if !resource_config.pack_version.is_empty() {
+                Some(TextComponent::text(format!(
+                    "{} (required)",
+                    resource_config.pack_version
+                )))
+            } else {
+                None
+            };
             let resource_pack = CConfigAddResourcePack::new(
                 &uuid,
                 &resource_config.url,
                 &resource_config.sha1,
                 resource_config.force,
-                if resource_config.prompt_message.is_empty() {
-                    None
-                } else {
-                    Some(TextComponent::text(resource_config.prompt_message.clone()))
-                },
+                prompt,
             );
 
             self.send_packet_now(&resource_pack).await;

@@ -64,6 +64,7 @@ pub fn generate_single_chunk(
             &generator.terrain_cache,
             &generator.base_router,
             *dimension,
+            false, // flat_world - benches use normal terrain
         );
     }
 

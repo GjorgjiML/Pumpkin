@@ -1,0 +1,20 @@
+[package]
+name = "albion_core"
+version = "0.1.0"
+edition = "2024"
+description = "AlbionMC core Pumpkin plugin — profiles, persistence, admin commands"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+albion-db = { path = "../albion-db" }
+albion-types = { path = "../albion-types" }
+pumpkin = { path = "../../../pumpkin", default-features = false }
+pumpkin-util = { path = "../../../pumpkin-util" }
+tokio = { version = "1.49", default-features = false, features = ["rt-multi-thread", "sync", "net"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "uuid"] }
+uuid = { version = "1.20", features = ["serde", "v4"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+log = "0.4"

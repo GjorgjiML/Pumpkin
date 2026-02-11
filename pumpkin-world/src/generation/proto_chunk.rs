@@ -527,6 +527,27 @@ impl ProtoChunk {
         self.stage = StagedChunkEnum::Biomes;
     }
 
+    /// Fills chunk with classic superflat preset: bedrock (y=0), 2× dirt (y=1,2), grass block (y=3).
+    pub fn step_to_flat(&mut self) {
+        let start_x = start_block_x(self.x);
+        let start_z = start_block_z(self.z);
+        let bedrock = &Block::BEDROCK.default_state;
+        let dirt = &Block::DIRT.default_state;
+        let grass = &Block::GRASS_BLOCK.default_state;
+
+        for local_x in 0..16 {
+            for local_z in 0..16 {
+                let block_x = start_x + local_x;
+                let block_z = start_z + local_z;
+                self.set_block_state(block_x, 0, block_z, bedrock);
+                self.set_block_state(block_x, 1, block_z, dirt);
+                self.set_block_state(block_x, 2, block_z, dirt);
+                self.set_block_state(block_x, 3, block_z, grass);
+            }
+        }
+        self.stage = StagedChunkEnum::Surface;
+    }
+
     pub fn step_to_noise(
         &mut self,
         settings: &GenerationSettings,

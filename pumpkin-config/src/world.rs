@@ -14,6 +14,9 @@ pub struct LevelConfig {
     /// Number of ticks between autosave checks. If 0, autosave is disabled.
     #[serde(default = "default_autosave_ticks")]
     pub autosave_ticks: u64,
+    /// Use superflat world generation for the overworld (bedrock, 2× dirt, grass block).
+    #[serde(default)]
+    pub flat_world: bool,
     // TODO: More options
 }
 
