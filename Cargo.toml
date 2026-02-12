@@ -13,10 +13,14 @@ members = [
     "plugin-src/albinomccore/albion-db",
     "plugin-src/albinomccore/albion-types",
     "plugin-src/albinomccore/albion-core",
+    "plugin-src/albinomccore/albion-zones",
     "plugin-src/wordguardpmc",
     "plugin-src/force_save",
+    "plugin-src/city_selector",
+    "plugin-src/chunky_pmc",
+    "pumpkin-worldedit",
 ]
-exclude = ["pumpkin-codegen", "pumpkin-worldedit"]
+exclude = ["pumpkin-codegen"]
 
 [workspace.lints.clippy]
 # Groups

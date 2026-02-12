@@ -10,6 +10,7 @@ use std::time::{Duration, Instant};
 
 use arc_swap::ArcSwap;
 use crossbeam::atomic::AtomicCell;
+use rand::seq::SliceRandom;
 use crossbeam::channel::Receiver;
 use log::warn;
 use pumpkin_data::dimension::Dimension;
@@ -84,6 +85,7 @@ use crate::entity::{EntityBaseFuture, NbtFuture, TeleportFuture};
 use crate::net::{ClientPlatform, GameProfile};
 use crate::net::{DisconnectReason, PlayerConfig};
 use crate::plugin::player::player_change_world::PlayerChangeWorldEvent;
+use crate::plugin::player::player_death::PlayerDeathEvent;
 use crate::plugin::player::player_gamemode_change::PlayerGamemodeChangeEvent;
 use crate::plugin::player::player_teleport::PlayerTeleportEvent;
 use crate::server::Server;
@@ -1985,18 +1987,57 @@ impl Player {
     async fn handle_killed(&self, death_msg: TextComponent) {
         self.set_client_loaded(false);
         let block_pos = self.position().to_block_pos();
-
+        let position = self.position();
         let keep_inventory = { self.world().level_info.load().game_rules.keep_inventory };
 
-        if !keep_inventory {
-            for item in &self.inventory().main_inventory {
-                let mut lock = item.lock().await;
-                self.world()
-                    .drop_stack(
-                        &block_pos,
-                        mem::replace(&mut *lock, ItemStack::EMPTY.clone()),
-                    )
-                    .await;
+        let player_arc = self
+            .world()
+            .players
+            .load()
+            .iter()
+            .find(|p| p.get_entity().entity_id == self.get_entity().entity_id)
+            .cloned();
+        let mut event = PlayerDeathEvent {
+            player: player_arc.expect("player must be in world players list"),
+            position,
+            drop_percent: if keep_inventory { 0 } else { 100 },
+            trash_percent: 0,
+        };
+        if let Some(server) = self.world().server.upgrade() {
+            event = server.plugin_manager.fire(event).await;
+        }
+
+        let drop_percent = event.drop_percent;
+        let trash_percent = event.trash_percent;
+
+        if drop_percent > 0 {
+            let inv = self.inventory();
+            let mut non_empty_indices: Vec<usize> = Vec::new();
+            for (i, item) in inv.main_inventory.iter().enumerate() {
+                let lock = item.lock().await;
+                if !lock.is_empty() {
+                    non_empty_indices.push(i);
+                }
+            }
+            let n = non_empty_indices.len();
+            let to_take = (n * usize::from(drop_percent) + 99) / 100;
+            non_empty_indices.shuffle(&mut rand::rng());
+            let slots_to_loot: Vec<usize> = non_empty_indices.into_iter().take(to_take).collect();
+
+            let num_to_drop = if trash_percent >= 100 {
+                0
+            } else {
+                (slots_to_loot.len() * (100 - usize::from(trash_percent)) + 99) / 100
+            };
+            for (idx, slot) in slots_to_loot.into_iter().enumerate() {
+                let stack = {
+                    let mut lock = inv.main_inventory[slot].lock().await;
+                    mem::replace(&mut *lock, ItemStack::EMPTY.clone())
+                };
+                let should_drop = idx < num_to_drop && !stack.is_empty();
+                if should_drop {
+                    self.world().drop_stack(&block_pos, stack).await;
+                }
             }
         }
 

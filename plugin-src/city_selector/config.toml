@@ -1,0 +1,17 @@
+# City Selector – server names must match your Velocity proxy server IDs
+[lobby]
+# Give compass on join (lobby server only when used behind Velocity)
+give_compass_on_join = true
+
+[servers]
+# City 1 – Ratsku (zones outside city)
+ratsku = "ratsku"
+# City 2 – Vatsku
+vatsku = "vatsku"
+# City 3 – Ratuskuu
+ratuskuu = "ratuskuu"
+# City 4 – AJkaz
+ajkaz = "ajkaz"
+
+# Optional: extra servers to show in the menu (e.g. minigames)
+# extra = ["survival", "creative"]

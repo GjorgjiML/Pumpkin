@@ -4,7 +4,6 @@ use std::{
         Arc,
         atomic::{AtomicU8, Ordering},
     },
-    time::Duration,
 };
 
 use crate::screen_handler::InventoryPlayer;
@@ -13,7 +12,7 @@ use pumpkin_data::data_component_impl::EquipmentSlot;
 use pumpkin_data::item::Item;
 use pumpkin_world::inventory::Inventory;
 use pumpkin_world::item::ItemStack;
-use tokio::{sync::Mutex, time::timeout};
+use tokio::sync::Mutex;
 
 pub type BoxFuture<'a, T> = Pin<Box<dyn Future<Output = T> + Send + 'a>>;
 
@@ -72,9 +71,7 @@ pub trait Slot: Send + Sync {
         // Default implementation logic:
         Box::pin(async move {
             let stack = self.get_stack().await;
-            let lock = timeout(Duration::from_secs(5), stack.lock())
-                .await
-                .expect("Timed out while trying to acquire lock");
+            let lock = stack.lock().await;
 
             lock.clone()
         })

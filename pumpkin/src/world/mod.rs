@@ -114,7 +114,6 @@ use pumpkin_util::{
     math::{position::chunk_section_from_pos, vector2::Vector2},
     random::{RandomImpl, get_seed, xoroshiro128::Xoroshiro},
 };
-use pumpkin_world::inventory::Clearable;
 use pumpkin_world::world::{GetBlockError, WorldFuture};
 use pumpkin_world::{
     BlockStateId, CURRENT_BEDROCK_MC_VERSION, biome, block::entities::BlockEntity,
@@ -2150,7 +2149,8 @@ impl World {
 
         if !keep_inventory {
             player.set_experience(0, 0.0, 0).await;
-            player.inventory.clear().await;
+            // Do not clear inventory here: death was already handled in handle_killed
+            // (drop_percent/trash_percent from zone or gamerule). Inventory is already correct.
         }
 
         // Set entity position BEFORE loading chunks, so chunks load at the right location

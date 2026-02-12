@@ -1,0 +1,23 @@
+# PostgreSQL for AlbionMC albion_core plugin
+# Usage: docker compose -f docker-compose.albion.yml up -d
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: albion-postgres
+    environment:
+      POSTGRES_USER: albion
+      POSTGRES_PASSWORD: albion
+      POSTGRES_DB: albionmc
+    ports:
+      - "5432:5432"
+    volumes:
+      - albion_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U albion"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  albion_postgres_data:

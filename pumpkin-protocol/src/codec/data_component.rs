@@ -2,9 +2,10 @@ use crate::codec::var_int::VarInt;
 use pumpkin_data::Enchantment;
 use pumpkin_data::data_component::DataComponent;
 use pumpkin_data::data_component_impl::{
-    DamageImpl, DataComponentImpl, EnchantmentsImpl, MaxStackSizeImpl, PotionContentsImpl,
-    StatusEffectInstance, UnbreakableImpl, get,
+    CustomNameImpl, DamageImpl, DataComponentImpl, EnchantmentsImpl, ItemNameImpl,
+    MaxStackSizeImpl, PotionContentsImpl, StatusEffectInstance, UnbreakableImpl, get,
 };
+use pumpkin_util::text::TextComponent;
 use serde::de;
 use serde::de::SeqAccess;
 use serde::ser::SerializeStruct;
@@ -86,6 +87,36 @@ impl DataComponentCodec<Self> for UnbreakableImpl {
     }
     fn deserialize<'a, A: SeqAccess<'a>>(_seq: &mut A) -> Result<Self, A::Error> {
         Ok(Self)
+    }
+}
+
+impl DataComponentCodec<Self> for CustomNameImpl {
+    fn serialize<T: SerializeStruct>(&self, seq: &mut T) -> Result<(), T::Error> {
+        let component = TextComponent::text(self.name);
+        seq.serialize_field::<TextComponent>("", &component)
+    }
+
+    fn deserialize<'a, A: SeqAccess<'a>>(seq: &mut A) -> Result<Self, A::Error> {
+        let component = seq
+            .next_element::<TextComponent>()?
+            .ok_or(de::Error::custom("No CustomName text component!"))?;
+        let leaked: &'static str = Box::leak(component.get_text().into_boxed_str());
+        Ok(Self { name: leaked })
+    }
+}
+
+impl DataComponentCodec<Self> for ItemNameImpl {
+    fn serialize<T: SerializeStruct>(&self, seq: &mut T) -> Result<(), T::Error> {
+        let component = TextComponent::text(self.name);
+        seq.serialize_field::<TextComponent>("", &component)
+    }
+
+    fn deserialize<'a, A: SeqAccess<'a>>(seq: &mut A) -> Result<Self, A::Error> {
+        let component = seq
+            .next_element::<TextComponent>()?
+            .ok_or(de::Error::custom("No ItemName text component!"))?;
+        let leaked: &'static str = Box::leak(component.get_text().into_boxed_str());
+        Ok(Self { name: leaked })
     }
 }
 
@@ -269,6 +300,8 @@ pub fn deserialize<'a, A: SeqAccess<'a>>(
         DataComponent::Enchantments => Ok(EnchantmentsImpl::deserialize(seq)?.to_dyn()),
         DataComponent::Damage => Ok(DamageImpl::deserialize(seq)?.to_dyn()),
         DataComponent::Unbreakable => Ok(UnbreakableImpl::deserialize(seq)?.to_dyn()),
+        DataComponent::CustomName => Ok(CustomNameImpl::deserialize(seq)?.to_dyn()),
+        DataComponent::ItemName => Ok(ItemNameImpl::deserialize(seq)?.to_dyn()),
         DataComponent::PotionContents => Ok(PotionContentsImpl::deserialize(seq)?.to_dyn()),
         _ => todo!("{} not yet implemented", id.to_name()),
     }
@@ -283,6 +316,8 @@ pub fn serialize<T: SerializeStruct>(
         DataComponent::Enchantments => get::<EnchantmentsImpl>(value).serialize(seq),
         DataComponent::Damage => get::<DamageImpl>(value).serialize(seq),
         DataComponent::Unbreakable => get::<UnbreakableImpl>(value).serialize(seq),
+        DataComponent::CustomName => get::<CustomNameImpl>(value).serialize(seq),
+        DataComponent::ItemName => get::<ItemNameImpl>(value).serialize(seq),
         DataComponent::PotionContents => get::<PotionContentsImpl>(value).serialize(seq),
         _ => todo!("{} not yet implemented", id.to_name()),
     }

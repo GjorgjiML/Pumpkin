@@ -1,0 +1,23 @@
+# AlbionMC Zones configuration
+# Zones are created in-game with /zone pos1, /zone pos2, /zone create <name> <risk>
+# They are stored in the database, not in this file.
+
+[database]
+url = "postgres://albion:albion@localhost:5432/albionmc"
+
+[newbie_protection]
+# Hours of play-time before a player may enter Red/Black zones
+required_hours = 2
+
+[death]
+# Percentage of dropped items destroyed on full-loot death
+trash_chance_percent = 20
+
+# Default partial drop percent for Yellow zones
+partial_drop_percent = 30
+
+# Default risk for wilderness (outside any defined zone)
+[wilderness]
+risk = "green"
+pvp_enabled = false
+death_rule = "safe"

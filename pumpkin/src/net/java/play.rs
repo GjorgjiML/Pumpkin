@@ -18,6 +18,7 @@ use crate::entity::player::{ChatMode, ChatSession, Player};
 use crate::error::PumpkinError;
 use crate::net::PlayerConfig;
 use crate::net::java::JavaClient;
+use crate::plugin::player::player_attack::PlayerAttackEvent;
 use crate::plugin::player::player_chat::PlayerChatEvent;
 use crate::plugin::player::player_command_send::PlayerCommandSendEvent;
 use crate::plugin::player::player_interact_event::{InteractAction, PlayerInteractEvent};
@@ -1247,6 +1248,27 @@ impl JavaClient {
                     if config.protect_creative
                         && player_victim.gamemode.load() == GameMode::Creative
                     {
+                        world
+                            .play_sound(
+                                Sound::EntityPlayerAttackNodamage,
+                                SoundCategory::Players,
+                                &player_victim.position(),
+                            )
+                            .await;
+                        return;
+                    }
+
+                    let Some(attacker) = world.get_player_by_id(player.entity_id()) else {
+                        return;
+                    };
+                    let pvp_event = server
+                        .plugin_manager
+                        .fire(PlayerAttackEvent::new(
+                            attacker,
+                            player_victim.clone(),
+                        ))
+                        .await;
+                    if pvp_event.cancelled {
                         world
                             .play_sound(
                                 Sound::EntityPlayerAttackNodamage,

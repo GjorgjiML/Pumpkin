@@ -176,6 +176,15 @@ pub struct CustomNameImpl {
     pub name: &'static str,
 }
 impl DataComponentImpl for CustomNameImpl {
+    fn write_data(&self) -> NbtTag {
+        // Create NBT structure for TextComponent: { "text": "name" }
+        let mut compound = NbtCompound::new();
+        compound.put_string("text", self.name.to_string());
+        NbtTag::Compound(compound)
+    }
+    fn get_hash(&self) -> i32 {
+        get_str_hash(self.name) as i32
+    }
     default_impl!(CustomName);
 }
 #[derive(Clone, Hash, PartialEq, Eq)]

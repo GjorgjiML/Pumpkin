@@ -1,0 +1,21 @@
+[package]
+name = "albion_zones"
+version = "0.1.0"
+edition = "2024"
+description = "AlbionMC zones plugin — Green/Yellow/Red/Black risk zones, death rules, newbie protection"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+albion-db = { path = "../albion-db" }
+albion-types = { path = "../albion-types" }
+pumpkin = { path = "../../../pumpkin", default-features = false }
+pumpkin-util = { path = "../../../pumpkin-util" }
+tokio = { version = "1.49", default-features = false, features = ["rt-multi-thread", "sync", "net"] }
+sqlx = { version = "0.8", default-features = false, features = ["runtime-tokio", "postgres", "uuid"] }
+uuid = { version = "1.20", features = ["serde", "v4"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.9"
+log = "0.4"

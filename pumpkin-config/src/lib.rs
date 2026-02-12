@@ -83,8 +83,10 @@ pub struct BasicConfiguration {
     pub java_edition_address: SocketAddr,
     /// Whether Bedrock Edition Clients are Accepted.
     pub bedrock_edition: bool,
-    /// Whether Bedrock Edition Clients are Accepted.
+    /// Address and port the Bedrock server binds to.
     pub bedrock_edition_address: SocketAddr,
+    /// Address and port to advertise to Bedrock clients in RakNet handshake. If unset, defaults to 127.0.0.1 when bound to 0.0.0.0 (so local play works), otherwise the bind address. Set to your server's public IP for remote connections.
+    pub bedrock_advertise_address: Option<SocketAddr>,
     /// The seed for the world generation.
     pub seed: Seed,
     /// The maximum number of players allowed on the server. Specifying `0` disables the limit.
@@ -138,6 +140,7 @@ impl Default for BasicConfiguration {
             java_edition_address: "0.0.0.0:25565".parse().unwrap(),
             bedrock_edition: true,
             bedrock_edition_address: "0.0.0.0:19132".parse().unwrap(),
+            bedrock_advertise_address: None,
             seed: Seed(random::get_seed()),
             max_players: 1000,
             view_distance: NonZeroU8::new(16).unwrap(),

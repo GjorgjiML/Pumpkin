@@ -445,7 +445,7 @@ impl TextComponent {
     pub fn encode(&self) -> Box<[u8]> {
         let mut buf = Vec::new();
         // TODO: Properly handle errors
-        pumpkin_nbt::serializer::to_bytes_unnamed(&self, &mut buf)
+        pumpkin_nbt::serializer::to_bytes_unnamed(&self.0, &mut buf)
             .expect("Failed to serialize text component NBT for encode");
 
         buf.into_boxed_slice()

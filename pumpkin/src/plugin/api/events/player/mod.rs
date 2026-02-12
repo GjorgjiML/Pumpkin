@@ -1,6 +1,9 @@
 pub mod player_change_world;
+pub mod player_attack;
 pub mod player_chat;
+pub mod player_container_click;
 pub mod player_command_send;
+pub mod player_death;
 pub mod player_gamemode_change;
 pub mod player_interact_event;
 pub mod player_join;

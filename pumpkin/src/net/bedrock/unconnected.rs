@@ -6,6 +6,7 @@ use pumpkin_protocol::bedrock::{
 };
 use tokio::net::UdpSocket;
 
+use crate::net::bedrock::connection::bedrock_advertise_addr;
 use crate::{net::bedrock::BedrockClient, server::Server};
 use pumpkin_world::{CURRENT_BEDROCK_MC_PROTOCOL, CURRENT_BEDROCK_MC_VERSION};
 
@@ -27,6 +28,9 @@ impl BedrockClient {
             .unwrap()
             .online as _;
 
+        let advertise = bedrock_advertise_addr(server);
+        let port = advertise.port();
+
         let motd_string = ServerInfo {
             edition: "MCPE",
             // TODO The default motd is to long to be displayed completely
@@ -40,8 +44,8 @@ impl BedrockClient {
             motd_line_2: server.basic_config.default_level_name.clone(),
             game_mode: server.defaultgamemode.lock().await.gamemode.to_str(),
             game_mode_numeric: 1,
-            port_ipv4: 19132,
-            port_ipv6: 19133,
+            port_ipv4: port,
+            port_ipv6: port + 1,
         };
         Self::send_offline_packet(
             &CUnconnectedPong::new(

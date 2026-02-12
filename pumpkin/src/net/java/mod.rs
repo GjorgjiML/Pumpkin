@@ -61,6 +61,8 @@ pub mod status;
 
 use crate::entity::player::Player;
 use crate::net::{GameProfile, PlayerConfig};
+use crate::plugin::Cancellable;
+use crate::plugin::player::player_container_click::PlayerContainerClickEvent;
 use crate::{error::PumpkinError, net::EncryptionError, server::Server};
 
 pub struct JavaClient {
@@ -744,7 +746,21 @@ impl JavaClient {
                     .await;
             }
             id if id == SClickSlot::PACKET_ID => {
-                player.on_slot_click(SClickSlot::read(payload)?).await;
+                let click_packet = SClickSlot::read(payload)?;
+                let click_event = server
+                    .plugin_manager
+                    .fire(PlayerContainerClickEvent::new(
+                        player.clone(),
+                        click_packet.sync_id.0,
+                        click_packet.slot,
+                        click_packet.button,
+                        click_packet.mode.clone(),
+                    ))
+                    .await;
+
+                if !click_event.cancelled() {
+                    player.on_slot_click(click_packet).await;
+                }
             }
             id if id == SSetHeldItem::PACKET_ID => {
                 self.handle_set_held_item(player, SSetHeldItem::read(payload)?)

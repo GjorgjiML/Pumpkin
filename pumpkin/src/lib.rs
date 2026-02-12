@@ -465,7 +465,7 @@ impl PumpkinServer {
                                     *master_client_id_counter += 1;
 
                                     let mut platform = BedrockClient::new(self.udp_socket.clone().unwrap(), client_addr, be_clients);
-                                    platform.handle_connection_request(packet).await;
+                                    platform.handle_connection_request(packet, &self.server).await;
                                     platform.start_outgoing_packet_task();
 
                                     clients_guard.insert(client_addr,
